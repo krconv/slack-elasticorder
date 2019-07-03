@@ -1,13 +1,7 @@
-version: '2'
+version: "2"
 services:
-  elasticsearch:
-    image: elasticsearch:2
-    ports:
-        - "9200:9200"
-  node:
+  recorder:
     build: ./
     environment:
-        - ELASTICSEARCH_HOST=elasticsearch:9200
-        - SLACK_API_TOKEN
-    depends_on:
-      - elasticsearch
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+      - SLACK_API_TOKEN=xoxp-token
