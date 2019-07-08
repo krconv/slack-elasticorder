@@ -6,22 +6,16 @@ const elasticsearchClient = new elasticsearch.Client({
   node: process.env.ELASTICSEARCH_HOST
 });
 
-const partialUpdateInterval = 60; // seconds
-const fullUpdateInterval = 25 * 60 * 60; // seconds
+const partialUpdateInterval = 60 * 60; // 60 minutes
+const fullUpdateInterval = 24 * 60 * 60; // 24 hours
 
 function now() {
   return new Date().valueOf() / 1000;
 }
 
 async function getChannels() {
-  //const response = await slackClient.conversations.list({ limit: 1000 });
-  //return response.channels;
-  return [
-    {
-      id: "CEX80FTLY",
-      name: "aap-troubleshooting"
-    }
-  ];
+  const response = await slackClient.conversations.list({ limit: 1000 });
+  return response.channels;
 }
 
 async function getHistory(channel, seconds = null) {
@@ -66,13 +60,13 @@ async function saveDocument(id, document) {
       body: document
     });
   } catch (err) {
-  await elasticsearchClient.update({
-    index: "slack",
-    type: "_doc",
-    id: id,
-    body: { doc: document }
-  });
-}
+    await elasticsearchClient.update({
+      index: "slack",
+      type: "_doc",
+      id: id,
+      body: { doc: document }
+    });
+  }
 }
 
 async function saveHistory(seconds = null) {
