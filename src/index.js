@@ -81,6 +81,7 @@ async function saveHistory(seconds = null) {
     console.log("Found", history.length, "messages in history");
     for (var j = 0; j < history.length; j++) {
       const message = history[j];
+      message.channel = channel;
       message.user = getById(users, message.user);
       message.iso_ts = new Date(message.ts * 1000).toISOString();
       try {
