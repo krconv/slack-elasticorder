@@ -58,12 +58,21 @@ function getById(list, id) {
 }
 
 async function saveDocument(id, document) {
+  try {
+    await elasticsearchClient.create({
+      index: "slack",
+      type: "_doc",
+      id: id,
+      body: document
+    });
+  } catch (err) {
   await elasticsearchClient.update({
     index: "slack",
     type: "_doc",
     id: id,
     body: { doc: document }
   });
+}
 }
 
 async function saveHistory(seconds = null) {
