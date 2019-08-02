@@ -7,7 +7,7 @@ const elasticsearchClient = new elasticsearch.Client({
 });
 
 const partialUpdateInterval = 60 * 60; // 60 minutes
-const fullUpdateInterval = 24 * 60 * 60; // 24 hours
+const fullUpdateInterval = 12 * 60 * 60; // 24 hours
 
 function now() {
   return new Date().valueOf() / 1000;
@@ -18,22 +18,32 @@ async function getChannels() {
   return response.channels;
 }
 
-async function getHistory(channel, seconds = null) {
+async function getHistory(channel, seconds = null, latest = null) {
   const response = await slackClient.channels.history({
     channel: channel.id,
     oldest: seconds ? now() - seconds : undefined,
-    count: 1000
+    count: 1000,
+    latest: latest
   });
+  var messages = response.messages;
   if (response.has_more) {
     console.log(
       "History for channel",
       channel.name,
-      "has more than 1,000 messages."
+      "exceeded page limit, requesting next page..."
     );
-    console.log("Some messages may not have been recorded.");
+    if (response.messages.length > 0) {
+      messages = messages.concat(
+        await getHistory(
+          channel,
+          seconds,
+          response.messages[response.messages.length - 1].ts
+        )
+      );
+    }
   }
 
-  return response.messages;
+  return messages;
 }
 
 async function getUsers() {
@@ -83,7 +93,11 @@ async function saveHistory(seconds = null) {
       const message = history[j];
       message.channel = channel;
       message.user = getById(users, message.user);
-      message.iso_ts = new Date(message.ts * 1000).toISOString();
+      message.iso_ts = message.ts
+        ? new Date(message.ts * 1000).toISOString()
+        : undefined;
+      if (!message.ts) console.log(message);
+
       try {
         await saveDocument(message.ts, message);
       } catch (err) {
