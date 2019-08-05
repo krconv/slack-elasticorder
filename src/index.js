@@ -79,6 +79,14 @@ async function saveDocument(id, document) {
   }
 }
 
+function replaceUserMentions(text, users) {
+  const userIdRegex = /\<@(U[a-zA-Z0-9]+)\>/g;
+  return text.replace(
+    userIdRegex,
+    (match, userId) => `<@${(getById(users, userId) || {}).name}>`
+  );
+}
+
 async function saveHistory(seconds = null) {
   const channels = await getChannels();
   const users = await getUsers();
@@ -86,7 +94,10 @@ async function saveHistory(seconds = null) {
   for (var i = 0; i < channels.length; i++) {
     const channel = channels[i];
     console.log("Saving channel", channel.name);
-    const history = await getHistory(channel, seconds);
+    const history = (await getHistory(channel, seconds)).map(message => {
+      message.text = replaceUserMentions(message.text, users);
+      return message;
+    });
 
     console.log("Found", history.length, "messages in history");
     for (var j = 0; j < history.length; j++) {
