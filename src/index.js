@@ -79,6 +79,14 @@ async function saveDocument(id, document) {
   }
 }
 
+function replaceChannelMentions(text) {
+  const channelNameRegex = /\<#C[a-zA-Z0-9]+\|([^ ]+)\>/g;
+  return text.replace(
+    channelNameRegex,
+    (match, channelName) => `<#${channelName}>`
+  );
+}
+
 function replaceUserMentions(text, users) {
   const userIdRegex = /\<@(U[a-zA-Z0-9]+)\>/g;
   return text.replace(
@@ -95,6 +103,7 @@ async function saveHistory(seconds = null) {
     const channel = channels[i];
     console.log("Saving channel", channel.name);
     const history = (await getHistory(channel, seconds)).map(message => {
+      message.text = replaceChannelMentions(message.text, users);
       message.text = replaceUserMentions(message.text, users);
       return message;
     });
